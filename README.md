@@ -4,7 +4,8 @@ Translate text to speech using Google Cloud on the command line.
 
 ## Installation
 
-wip
+You can find prebuilt binaries [under releases](https://github.com/NullEnt1ty/GoCloudTTS/releases). Download the binary
+for your system and you're good to go.
 
 ## Usage
 
