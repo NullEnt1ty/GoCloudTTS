@@ -1,0 +1,81 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+
+  build_linux:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        platform: ["386", "amd64", "arm", "arm64"]
+    name: Build Linux ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v2
+      - name: Build
+        run: go build -o "GoCloudTTS-linux-${{ matrix.platform }}" .
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.platform }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: GoCloudTTS-linux-${{ matrix.platform }}
+          path: GoCloudTTS-linux-${{ matrix.platform }}
+
+  build_windows:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        platform: ["386", "amd64"]
+    name: Build Windows ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v2
+      - name: Build
+        run: go build -o "GoCloudTTS-windows-${{ matrix.platform }}.exe" .
+        env:
+          GOOS: windows
+          GOARCH: ${{ matrix.platform }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: GoCloudTTS-windows-${{ matrix.platform }}.exe
+          path: GoCloudTTS-windows-${{ matrix.platform }}.exe
+
+  release_on_github:
+    runs-on: ubuntu-20.04
+    name: Release on GitHub
+    needs: ["build_linux", "build_windows"]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: build-artifacts/
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            TBD
+          draft: false
+          prerelease: false
+      - name: Upload assets
+        uses: csexton/release-asset-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-url: ${{ steps.create_release.outputs.upload_url }}
+          files: |
+            build-artifacts/GoCloudTTS-linux-386/GoCloudTTS-linux-386
+            build-artifacts/GoCloudTTS-linux-amd64/GoCloudTTS-linux-amd64
+            build-artifacts/GoCloudTTS-linux-arm/GoCloudTTS-linux-arm
+            build-artifacts/GoCloudTTS-linux-arm64/GoCloudTTS-linux-arm64
+            build-artifacts/GoCloudTTS-windows-386.exe/GoCloudTTS-windows-386.exe
+            build-artifacts/GoCloudTTS-windows-amd64.exe/GoCloudTTS-windows-amd64.exe
